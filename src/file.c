@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "string.h"
+#include <sys/stat.h>
 
 
 bool read_entire_file(const char *path, StringBuilder *sb) {
@@ -60,4 +61,40 @@ bool write_to_file(const char *path, StringBuilder *sb) {
 }
 
 
+// recursively create directories in the path
+void mkdirs_recursive(const char* path) {
+	char tmp[512];
+	size_t len = strlen(path);
 
+	for (size_t i = 0; i < len; ++i) {
+		if (path[i] == '/' && i > 0) {
+			strncpy(tmp, path, i);
+			tmp[i] = '\0';
+			mkdir(tmp, 0755); // ignore failure, it'll fail if it already exists
+		}
+	}
+}
+
+// file_path must be null terminated
+const char* get_filename(const char* file_path) {
+	const char* last_slash = strrchr(file_path, '/');
+	if (!last_slash) {
+		return file_path;
+	}
+	return last_slash + 1;
+}
+
+// str must be null terminated
+bool ends_with(const char* str, const char* w) {
+	size_t len_str = strlen(str);
+	size_t len_w = strlen(w);
+	if (len_w > len_str) {
+		return false;
+	}
+	return strcmp(str + len_str - len_w, w) == 0;
+}
+
+// filename must be null terminated
+bool is_cey_file(const char* filename) {
+	return ends_with(filename, ".cy");
+}

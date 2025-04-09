@@ -34,3 +34,10 @@ typedef struct {
 	size_t capacity;
 } StringBuilder;
 
+StringBuilder sb_new() {
+	StringBuilder sb = {
+		.items = NULL, .count = 0, .capacity = 0
+	};
+	return sb;
+}
+

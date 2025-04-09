@@ -1,31 +1,19 @@
 CC = gcc
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -g3
 
-SRC = ./src/
-BUILD = ./build/
+BUILD = build/
 
-all: main
+all: cey
 
-main: $(SRC)main.c
+cey: src/cey.c
 	mkdir -p $(BUILD)
-	$(CC) $(CFLAGS) -o $(BUILD)main $(SRC)main.c
-
-cey: cey.c
-	$(CC) $(CFLAGS) -o $(BUILD)cey $(SRC)cey.c
-
-yec: yec.c
-	$(CC) $(CFLAGS) -o $(BUILD)yec $(SRC)yec.c
+	$(CC) $(CFLAGS) -o $(BUILD)cey src/cey.c
 
 
 clean:
 	rm -rf $(BUILD)
 
-run: clean main
-	$(BUILD)main
+test: clean cey
+	$(BUILD)cey $(CFLAGS) -o build/main src/main.cy -- --cc=clang
 
-compile: clean main
-	$(BUILD)main
-	gcc -o $(BUILD)result $(BUILD)result.c
-	$(BUILD)result
-
-.PHONY: all clean run compile
+.PHONY: all clean test
