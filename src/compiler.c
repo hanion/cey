@@ -36,11 +36,12 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 	Lexer lexer = lexer_new(source);
 	Token token = lexer_next(&lexer);
 
-	TokenType prev = TOKEN_DONT_CARE;
+	size_t cursor = 0;
 	while (token.type != TOKEN_END) {
-		if (token.type == TOKEN_SYMBOL || token.type == TOKEN_INTEGER) {
-			if (prev == TOKEN_SYMBOL) {
-				da_append(&output, ' ');
+		if (!options.pack_tight) {
+			while (&(lexer.content[cursor]) != token.text) {
+				da_append(&output, lexer.content[cursor]);
+				cursor++;
 			}
 		}
 
@@ -55,11 +56,20 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 			da_append_many(&output, token.text, token.length);
 		}
 
-		if (token.type == TOKEN_COMMENT || token.type == TOKEN_PREPROC_END) {
-			da_append(&output, '\n');
-		}
-		prev = token.type;
+		cursor += token.length;
+		TokenType prev = token.type;
 		token = lexer_next(&lexer);
+
+		if (options.pack_tight) {
+			if (prev == TOKEN_COMMENT || prev == TOKEN_PREPROC_END) {
+				da_append(&output, '\n');
+			}
+			if (token.type == TOKEN_SYMBOL || token.type == TOKEN_INTEGER) {
+				if (prev == TOKEN_SYMBOL) {
+					da_append(&output, ' ');
+				}
+			}
+		}
 	}
 
 	mkdirs_recursive(output_path);
