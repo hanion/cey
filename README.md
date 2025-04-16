@@ -1,3 +1,4 @@
+![cey](https://github.com/user-attachments/assets/8b5566b3-2e11-4050-89df-3a5376c98cf8)
 # C* (C Yıldız) - The Turkish C Programming Language
 
 `cey` is the C* compiler. It transpiles `.cy` source files to C, then compiles them using `gcc` or `clang`.
