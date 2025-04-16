@@ -40,3 +40,15 @@ Use `--` to separate C compiler arguments from `cey` options, if any.
 
 ## Output
 Intermediate C files are written to: `./build/int/<filename>.cy`
+
+## Reverse cey - yec
+Use `--yec` to reverse-compile a C file to C*. This only performs transpilation, not compilation.
+```bash
+cey ./src/cey.c -- --yec
+```
+
+## Bootstrap
+The C* source code for the compiler itself is in `examples/cey.cy`.
+```bash
+cey examples/cey.cy -o cey
+```

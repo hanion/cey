@@ -13,7 +13,7 @@ cey: src/cey.c
 clean:
 	rm -rf $(BUILD)
 
-test: clean cey
-	$(BUILD)cey $(CFLAGS) -o build/main src/main.cy -- --cc=clang
+bootstrap: cey
+	$(BUILD)cey $(CFLAGS) -o build/cey ./examples/cey.cy
 
-.PHONY: all clean test
+.PHONY: all clean bootstrap
