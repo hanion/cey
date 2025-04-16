@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 			} else if (strncmp(arg, "--int",5) == 0) {
 				op.retain_intermediate = true;
 			} else {
-				fprintf(stderr, "unknown cey flag: %s\n", arg);
+				fprintf(stderr, "[ERROR] unknown cey flag: %s\n", arg);
 				exit(1);
 			}
 			continue;
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 	}
 
 	if (to_compile_count <= 0) {
-		fprintf(stderr, "no source file provided\n");
+		fprintf(stderr, "[ERROR] no source file provided\n");
 		exit(1);
 	}
 
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 		cc_args[cc_argc] = strdup(tmp_file);
 
 		if (!compile_to_c(file, cc_args[cc_argc], op)) {
-			fprintf(stderr, "compilation failed for %s\n", file);
+			fprintf(stderr, "[ERROR] compilation failed for %s\n", file);
 			exit(1);
 		}
 		cc_argc++;
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 
 	cc_args[cc_argc] = NULL;
 
-	printf("executing: ");
+	printf("[INFO] executing: ");
 	for (int i = 0; i < cc_argc; ++i) {
 		printf("%s ", cc_args[i]);
 	}
