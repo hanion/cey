@@ -49,10 +49,9 @@ KeywordMap kmap[] = {
 
 	{"stdgç.b", "stdio.h"},
 	{"stdtam.b", "stdint.h"},
-	{"stdgç", "stdio.h"},
-	{"stdtam", "stdint.h"},
-	{"ip", "string"},
-	{"evrstd", "unistd"},
+	{"stdküt.b", "stdlib.h"},
+	{"ip.b", "string.h"},
+	{"evrstd.b", "unistd.h"},
 
 	{"bellekal", "malloc"},
 	{"tekraral", "realloc"},
@@ -63,6 +62,8 @@ KeywordMap kmap[] = {
 	{"yazdırf", "printf"},
 	{"ana", "main"},
 	{"çık", "exit"},
+
+	{"git", "goto"},
 
 	{NULL, NULL}
 };

@@ -1,7 +1,9 @@
-#ekle "stdgç"
-#ekle <stdtam>
-#ekle <stdlib.h>
-//#ekle <stdgç>
+#ekle "stdgç.b"
+#ekle <stdtam.b>
+#ekle <stdküt.b>
+#ekle <ip.b>
+#ekle <evrstd.b>
+//#ekle <_123-"\">;
 
 sabit kar* mesaj = "merhaba dunya";
 

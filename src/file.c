@@ -37,7 +37,7 @@ bool read_entire_file(const char *path, StringBuilder *sb) {
 	sb->count = new_count;
 
 defer:
-	if (!result) { printf("Could not read file %s: %s", path, strerror(errno)); }
+	if (!result) { printf("Could not read file %s: %s\n", path, strerror(errno)); }
 	if (f) { fclose(f); }
 	return result;
 }
