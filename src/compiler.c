@@ -14,6 +14,7 @@ typedef struct {
 	char* cc_override;
 	bool pack_tight;
 	bool from_c_to_cy;
+	bool retain_intermediate;
 } Options;
 
 Options options_new_default() {
@@ -21,6 +22,7 @@ Options options_new_default() {
 		.cc_override = NULL,
 		.pack_tight = false,
 		.from_c_to_cy = false,
+		.retain_intermediate = false,
 	};
 	return op;
 }

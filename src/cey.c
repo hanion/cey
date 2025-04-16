@@ -1,6 +1,9 @@
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "compiler.c"
 
 #define DEFAULT_CC "gcc" // or "clang"
+#define PATH_MAX 256
 
 int main(int argc, char** argv) {
 	char* cc_args[argc+3];
@@ -31,6 +34,9 @@ int main(int argc, char** argv) {
 				op.pack_tight = true;
 			} else if (strncmp(arg, "--yec",5) == 0) {
 				op.from_c_to_cy = true;
+				op.retain_intermediate = true;
+			} else if (strncmp(arg, "--int",5) == 0) {
+				op.retain_intermediate = true;
 			} else {
 				fprintf(stderr, "unknown cey flag: %s\n", arg);
 				exit(1);
@@ -45,29 +51,25 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	if (to_compile_count < 0) {
+	if (to_compile_count <= 0) {
 		fprintf(stderr, "no source file provided\n");
 		exit(1);
-	} else {
-		StringBuilder sb_arg = sb_new();
-		while (--to_compile_count >= 0) {
-			char* arg = to_compile[to_compile_count];
-			sb_arg.count = 0;
-			da_append_many(&sb_arg, INTERMEDIATE_DIR, strlen(INTERMEDIATE_DIR));
-			const char* filename = get_filename(arg);
-			da_append_many(&sb_arg, filename, strlen(filename));
-			da_append(&sb_arg, '\0');
-			// heap-copy the string since sb_arg will change
-			cc_args[cc_argc] = strdup(sb_arg.items);
-			bool result = compile_to_c(arg, cc_args[cc_argc], op);
-			cc_argc++;
-			if (!result) {
-				fprintf(stderr, "compilation failed for %s\n", arg);
-				// should we cleanup?
-				exit(1);
-			}
+	}
+
+	char tmp_template[] = "/tmp/cey_tmp_XXXXXX";
+	char* tmp_dir = mkdtemp(tmp_template);
+
+	for (int i = 0; i < to_compile_count; i++) {
+		const char* file = to_compile[i];
+		char tmp_file[PATH_MAX];
+		snprintf(tmp_file, sizeof(tmp_file), "%s/%s", tmp_dir, get_filename(file));
+		cc_args[cc_argc] = strdup(tmp_file);
+
+		if (!compile_to_c(file, cc_args[cc_argc], op)) {
+			fprintf(stderr, "compilation failed for %s\n", file);
+			exit(1);
 		}
-		free(sb_arg.items);
+		cc_argc++;
 	}
 
 	if (op.from_c_to_cy) {
@@ -86,7 +88,20 @@ int main(int argc, char** argv) {
 	}
 	printf("\n");
 
-	execvp(cc_args[0], cc_args);
+	pid_t pid = fork();
+	if (pid == 0) {
+		execvp(cc_args[0], cc_args);
+		exit(1);
+	} else {
+		int status;
+		if (!op.retain_intermediate) {
+			waitpid(pid, &status, 0);
+			char cmd[256];
+			snprintf(cmd, sizeof(cmd), "rm -rf %s", tmp_dir);
+			system(cmd);
+		}
+	}
 
+	// NOTE: intentionally not freeing, less clutter
 	return 0;
 }
