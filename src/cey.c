@@ -6,15 +6,16 @@ int main(int argc, char** argv) {
 	char* cc_args[argc+3];
 	int cc_argc = 0;
 
+	char* to_compile[argc+3];
+	int to_compile_count = 0;
+
 	cc_args[cc_argc++] = DEFAULT_CC;
 	cc_args[cc_argc++] = "-x";
 	cc_args[cc_argc++] = "c";
 
 	Options op = options_new_default();
-	StringBuilder sb_arg = sb_new();
 
 	bool parsing_cey_args = false;
-	bool should_run_cc = false;
 
 	for (int i = 1; i < argc; i++) {
 		char* arg = argv[i];
@@ -26,7 +27,7 @@ int main(int argc, char** argv) {
 		if (parsing_cey_args) {
 			if (strncmp(arg, "--cc=", 5) == 0) {
 				op.cc_override = arg + 5;
-			} else if (strcmp(arg, "--pack") == 0) {
+			} else if (strncmp(arg, "--pack",6) == 0) {
 				op.pack_tight = true;
 			} else {
 				fprintf(stderr, "unknown cey flag: %s\n", arg);
@@ -36,6 +37,21 @@ int main(int argc, char** argv) {
 		}
 
 		if (is_cey_file(arg)) {
+			to_compile[to_compile_count++] = arg;
+		} else {
+			cc_args[cc_argc++] = arg;
+		}
+	}
+
+	cc_args[cc_argc] = NULL;
+
+	if (to_compile_count < 0) {
+		fprintf(stderr, "no source file provided\n");
+		exit(1);
+	} else {
+		StringBuilder sb_arg = sb_new();
+		while (--to_compile_count >= 0) {
+			char* arg = to_compile[to_compile_count];
 			sb_arg.count = 0;
 			da_append_many(&sb_arg, INTERMEDIATE_DIR, strlen(INTERMEDIATE_DIR));
 			const char* filename = get_filename(arg);
@@ -50,18 +66,8 @@ int main(int argc, char** argv) {
 				// should we cleanup?
 				exit(1);
 			}
-			should_run_cc = true;
-		} else {
-			cc_args[cc_argc++] = arg;
 		}
-	}
-
-	cc_args[cc_argc] = NULL;
-	free(sb_arg.items);
-
-	if (!should_run_cc) {
-		fprintf(stderr, "no source file provided\n");
-		exit(1);
+		free(sb_arg.items);
 	}
 
 	if (op.cc_override) {
