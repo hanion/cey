@@ -5,6 +5,7 @@
 ## example.cy
 ```c
 #ekle <stdgç.b>
+#ekle <stdküt.b>
 
 tam ana(boşluk) {
     tam* dizi = (tam*) bellekal(5 * boyut(tam));
