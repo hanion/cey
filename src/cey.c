@@ -43,8 +43,6 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	cc_args[cc_argc] = NULL;
-
 	if (to_compile_count < 0) {
 		fprintf(stderr, "no source file provided\n");
 		exit(1);
@@ -73,6 +71,8 @@ int main(int argc, char** argv) {
 	if (op.cc_override) {
 		cc_args[0] = op.cc_override;
 	}
+
+	cc_args[cc_argc] = NULL;
 
 	printf("executing: ");
 	for (int i = 0; i < cc_argc; ++i) {
