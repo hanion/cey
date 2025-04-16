@@ -13,12 +13,14 @@
 typedef struct {
 	char* cc_override;
 	bool pack_tight;
+	bool from_c_to_cy;
 } Options;
 
 Options options_new_default() {
 	Options op = {
 		.cc_override = NULL,
 		.pack_tight = false,
+		.from_c_to_cy = false,
 	};
 	return op;
 }
@@ -46,7 +48,12 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 		}
 
 		if (token.type == TOKEN_SYMBOL) {
-			const char* to = find_keyword(token.text, token.length);
+			const char* to = NULL;
+			if (options.from_c_to_cy) {
+				to = find_keywordr(token.text, token.length);
+			} else {
+				to = find_keyword(token.text, token.length);
+			}
 			if (to) {
 				da_append_many(&output, to, strlen(to));
 			} else {

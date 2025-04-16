@@ -29,6 +29,8 @@ int main(int argc, char** argv) {
 				op.cc_override = arg + 5;
 			} else if (strncmp(arg, "--pack",6) == 0) {
 				op.pack_tight = true;
+			} else if (strncmp(arg, "--yec",5) == 0) {
+				op.from_c_to_cy = true;
 			} else {
 				fprintf(stderr, "unknown cey flag: %s\n", arg);
 				exit(1);
@@ -66,6 +68,10 @@ int main(int argc, char** argv) {
 			}
 		}
 		free(sb_arg.items);
+	}
+
+	if (op.from_c_to_cy) {
+		return 0;
 	}
 
 	if (op.cc_override) {
