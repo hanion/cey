@@ -94,11 +94,14 @@ int main(int argc, char** argv) {
 		exit(1);
 	} else {
 		int status;
+		waitpid(pid, &status, 0);
 		if (!op.retain_intermediate) {
-			waitpid(pid, &status, 0);
 			char cmd[256];
 			snprintf(cmd, sizeof(cmd), "rm -rf %s", tmp_dir);
 			system(cmd);
+		}
+		if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+			exit(WEXITSTATUS(status));
 		}
 	}
 
