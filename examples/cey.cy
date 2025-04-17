@@ -1,6 +1,6 @@
 // ++++++++++++++++++++++++++++++++++++++++ cey.c
 // ++++++++++++++++++++++++++++++++++++++++ string.h
-#ekle <stddef.h>
+#ekle <stdtan.b>
 
 #tanımla da_reserve(da, expected_capacity)                                                  \
 	yap {                                                                                   \
@@ -12,7 +12,7 @@
 				(da)->capacity *= 2;                                                       \
 			}                                                                              \
 			(da)->items = tekraral((da)->items, (da)->capacity * boyut(*(da)->items));     \
-			assert((da)->items != NULL);                                                   \
+			assert((da)->items != HİÇ);                                                   \
 		}                                                                                  \
 	} iken (0)
 
@@ -31,13 +31,13 @@
 
 türtanımla yapı {
 	kar *items;
-	size_t count;
-	size_t capacity;
+	boyut_t count;
+	boyut_t capacity;
 } StringBuilder;
 
 StringBuilder sb_new() {
 	StringBuilder sb = {
-		.items = NULL, .count = 0, .capacity = 0
+		.items = HİÇ, .count = 0, .capacity = 0
 	};
 	döndür sb;
 }
@@ -45,7 +45,7 @@ StringBuilder sb_new() {
 // ---------------------------------------- string.h
 // ++++++++++++++++++++++++++++++++++++++++ lexer.h
 #ekle <stdküt.b>
-#ekle <stdbool.h>
+#ekle <stdmantık.b>
 
 türtanımla sıralı {
 	TOKEN_END = 0,
@@ -61,13 +61,13 @@ türtanımla sıralı {
 türtanımla yapı {
 	TokenType type;
 	sabit kar* text;
-	size_t length;
+	boyut_t length;
 } Token;
 
 türtanımla yapı {
 	sabit kar* content;
-	size_t content_length;
-	size_t cursor;
+	boyut_t content_length;
+	boyut_t cursor;
 	mantık preprocessor_mode;
 	mantık preprocessor_in_string;
 } Lexer;
@@ -86,7 +86,7 @@ Lexer lexer_new(StringBuilder sb);
 
 kar lexer_advance(Lexer* l);
 mantık lexer_match_next(Lexer* l, kar c);
-mantık lexer_match_string(Lexer* l, sabit kar* str, size_t len);
+mantık lexer_match_string(Lexer* l, sabit kar* str, boyut_t len);
 boşluk lexer_trim_left(Lexer* l);
 boşluk lexer_skip_to_next_line(Lexer* l);
 
@@ -95,8 +95,8 @@ Token lexer_next(Lexer* l);
 // ---------------------------------------- lexer.h
 // ++++++++++++++++++++++++++++++++++++++++ compiler.c
 // ++++++++++++++++++++++++++++++++++++++++ lexer.c
-#ekle <assert.h>
-#ekle <ctype.h>
+#ekle <doğrulama.b>
+#ekle <ckarakter.b>
 
 mantık is_delimiter(kar c) {
 	döndür (c == '+' || c == '-'
@@ -131,8 +131,8 @@ Lexer lexer_new(StringBuilder sb) {
 		.content = sb.items,
 		.content_length = sb.count,
 		.cursor = 0,
-		.preprocessor_mode = false,
-		.preprocessor_in_string = false
+		.preprocessor_mode = yanlış,
+		.preprocessor_in_string = yanlış
 	};
 	döndür lexer;
 }
@@ -148,25 +148,25 @@ mantık lexer_match(Lexer* l, kar c) {
 	eğer (l->cursor < l->content_length) {
 		döndür c == l->content[l->cursor];
 	}
-	döndür false;
+	döndür yanlış;
 }
 
 mantık lexer_match_next(Lexer* l, kar c) {
 	eğer (l->cursor + 1 < l->content_length) {
 		döndür c == l->content[l->cursor + 1];
 	}
-	döndür false;
+	döndür yanlış;
 }
 
-mantık lexer_match_string(Lexer* l, sabit kar* str, size_t len) {
-	size_t i = 0;
+mantık lexer_match_string(Lexer* l, sabit kar* str, boyut_t len) {
+	boyut_t i = 0;
 	iken (l->cursor+i < l->content_length && i < len) {
 		eğer (l->content[l->cursor+i] != str[i]) {
-			döndür false;
+			döndür yanlış;
 		}
 		++i;
 	}
-	döndür true;
+	döndür doğru;
 }
 
 boşluk lexer_trim_left(Lexer* l) {
@@ -196,7 +196,7 @@ Token lexer_next(Lexer* l) {
 
 
 	eğer (lexer_match(l, '/')) {
-		size_t start = l->cursor;
+		boyut_t start = l->cursor;
 		eğer (lexer_match_next(l, '/')) {
 			lexer_skip_to_next_line(l);
 			token.length = l->cursor-start;
@@ -207,7 +207,7 @@ Token lexer_next(Lexer* l) {
 
 	eğer (lexer_match(l, '#')) {
 		lexer_advance(l);
-		l->preprocessor_mode = true;
+		l->preprocessor_mode = doğru;
 		// 'ekle'
 		Token next = lexer_next(l);
 		// add '#'
@@ -219,7 +219,7 @@ Token lexer_next(Lexer* l) {
 	eğer (l->preprocessor_mode) {
 		eğer (lexer_match(l, '>')) {
 			lexer_advance(l);
-			l->preprocessor_mode = false;
+			l->preprocessor_mode = yanlış;
 			token.type = TOKEN_PREPROC_END;
 			token.length = 1;
 			döndür token;
@@ -227,13 +227,13 @@ Token lexer_next(Lexer* l) {
 		eğer (lexer_match(l, '"')) {
 			lexer_advance(l);
 			eğer (!l->preprocessor_in_string) {
-				l->preprocessor_in_string = true;
+				l->preprocessor_in_string = doğru;
 				token.type = TOKEN_DONT_CARE;
 				token.length = 1;
 				döndür token;
 			}
-			l->preprocessor_in_string = false;
-			l->preprocessor_mode = false;
+			l->preprocessor_in_string = yanlış;
+			l->preprocessor_mode = yanlış;
 			token.type = TOKEN_PREPROC_END;
 			token.length = 1;
 			döndür token;
@@ -258,8 +258,8 @@ Token lexer_next(Lexer* l) {
 		token.type = TOKEN_SYMBOL;
 		iken (l->cursor < l->content_length) {
 			eğer (!is_symbol(l->content[l->cursor])) {
-				eğer (l->preprocessor_mode && lexer_match(l, '.')) {
-					// the '.' in #ekle <stdgç.b>
+				eğer (l->preprocessor_mode && (lexer_match(l, '.') || lexer_match(l, '/'))) {
+					// the '.' in #ekle
 				} değilse {
 					kır;
 				}
@@ -297,21 +297,21 @@ Token lexer_next(Lexer* l) {
 
 // ---------------------------------------- lexer.c
 // ++++++++++++++++++++++++++++++++++++++++ file.c
-#ekle <assert.h>
-#ekle <errno.h>
-#ekle <stdbool.h>
+#ekle <doğrulama.b>
+#ekle <hatano.b>
+#ekle <stdmantık.b>
 #ekle <stdgç.b>
 #ekle <stdküt.b>
-#ekle <ip.b>
-#ekle <sys/stat.h>
+#ekle <string.h>
+#ekle <sistem/durum.h>
 
 
 mantık read_entire_file(sabit kar *path, StringBuilder *sb) {
-	mantık result = true;
+	mantık result = doğru;
 
-	FILE *f = fopen(path, "rb");
-	eğer (f == NULL) { result = false; git defer; }
-	eğer (fseek(f, 0, SEEK_END) < 0) { result = false; git defer; }
+	FILE *f = daç(path, "rb");
+	eğer (f == HİÇ) { result = yanlış; git defer; }
+	eğer (fseek(f, 0, SEEK_END) < 0) { result = yanlış; git defer; }
 
 #değiltanımlı _WIN32
 	uzun m = ftell(f);
@@ -319,62 +319,62 @@ mantık read_entire_file(sabit kar *path, StringBuilder *sb) {
 	uzun uzun m = _ftelli64(f);
 #eğerson
 
-	eğer (m < 0) { result = false; git defer; }
-	eğer (fseek(f, 0, SEEK_SET) < 0) { result = false; git defer; }
+	eğer (m < 0) { result = yanlış; git defer; }
+	eğer (fseek(f, 0, SEEK_SET) < 0) { result = yanlış; git defer; }
 
-	size_t new_count = sb->count + m;
+	boyut_t new_count = sb->count + m;
 	eğer (new_count > sb->capacity) {
 		sb->items = tekraral(sb->items, new_count);
-		assert(sb->items != NULL);
+		assert(sb->items != HİÇ);
 		sb->capacity = new_count;
 	}
 
 	fread(sb->items + sb->count, m, 1, f);
-	eğer (ferror(f)) { result = false; git defer; }
+	eğer (ferror(f)) { result = yanlış; git defer; }
 	sb->count = new_count;
 
 defer:
 	eğer (!result) { yazdırf("Could not read file %s: %s\n", path, strerror(errno)); }
-	eğer (f) { fclose(f); }
+	eğer (f) { dkapat(f); }
 	döndür result;
 }
 
 mantık write_to_file(sabit kar *path, StringBuilder *sb) {
-	FILE *f = fopen(path, "wb");
-	eğer (f == NULL) {
+	FILE *f = daç(path, "wb");
+	eğer (f == HİÇ) {
 		yazdırf("Could not open file for writing: %s\n", strerror(errno));
-		döndür false;
+		döndür yanlış;
 	}
 
-	size_t written = fwrite(sb->items, 1, sb->count, f);
+	boyut_t written = dyaz(sb->items, 1, sb->count, f);
 	eğer (written != sb->count) {
 		yazdırf("Error writing to file: %s\n", strerror(errno));
-		fclose(f);
-		döndür false;
+		dkapat(f);
+		döndür yanlış;
 	}
 
-	fclose(f);
-	döndür true;
+	dkapat(f);
+	döndür doğru;
 }
 
 
 // recursively create directories in the path
 boşluk mkdirs_recursive(sabit kar* path) {
 	kar tmp[512];
-	size_t len = strlen(path);
+	boyut_t len = ip_uzunluk(path);
 
-	için (size_t i = 0; i < len; ++i) {
+	için (boyut_t i = 0; i < len; ++i) {
 		eğer (path[i] == '/' && i > 0) {
-			strncpy(tmp, path, i);
+			ip_kopyala_sınırlı(tmp, path, i);
 			tmp[i] = '\0';
-			mkdir(tmp, 0755); // ignore failure, it'll fail if it already exists
+			dizin_oluştur(tmp, 0755); // ignore failure, it'll fail if it already exists
 		}
 	}
 }
 
 // file_path must be null terminated
 sabit kar* get_filename(sabit kar* file_path) {
-	sabit kar* last_slash = strrchr(file_path, '/');
+	sabit kar* last_slash = ip_son_karakter(file_path, '/');
 	eğer (!last_slash) {
 		döndür file_path;
 	}
@@ -383,12 +383,12 @@ sabit kar* get_filename(sabit kar* file_path) {
 
 // str must be null terminated
 mantık ends_with(sabit kar* str, sabit kar* w) {
-	size_t len_str = strlen(str);
-	size_t len_w = strlen(w);
+	boyut_t len_str = ip_uzunluk(str);
+	boyut_t len_w = ip_uzunluk(w);
 	eğer (len_w > len_str) {
-		döndür false;
+		döndür yanlış;
 	}
-	döndür strcmp(str + len_str - len_w, w) == 0;
+	döndür ip_karşılaştır(str + len_str - len_w, w) == 0;
 }
 
 // filename must be null terminated
@@ -396,10 +396,7 @@ mantık is_cey_file(sabit kar* filename) {
 	döndür ends_with(filename, ".cy");
 }
 // ---------------------------------------- file.c
-
 // ++++++++++++++++++++++++++++++++++++++++ dictionary.c
-#ekle <ip.b>
-
 türtanımla yapı {
 	sabit kar* from;
 	sabit kar* to;
@@ -439,73 +436,120 @@ KeywordMap kmap[] = {
 	{"boşluk", "void"},
 	{"oynak", "volatile"},
 	{"iken", "while"},
+	{"yanlış", "false"},
+	{"doğru", "true"},
+	{"HİÇ", "NULL"},
+	{"git", "goto"},
+	{"bellekal", "malloc"},
+	{"tekraral", "realloc"},
+	{"bırak", "free"},
+	{"bellkopy", "memcpy"},
+	{"ip_kopy", "strcpy"},
+	{"ip_karşılaştır", "strcmp"},
+	{"ip_sınırlı_karşılaştır", "strncmp"},
+	{"ip_son_karakter", "strrchr"},
+	{"ip_kopyala_sınırlı", "strncpy"},
+	{"ip_uzunluk", "strlen"},
+	{"ana", "main"},
+	{"çık", "exit"},
+	{"yazdırf", "printf"},
+	{"snyazdırf", "snprintf"},
+	{"fyazdırf", "fprintf"},
+	{"stdhata", "stderr"},
+	{"hata_mesajı", "strerror"},
+	{"hatano", "errno"},
+	{"dizin_oluştur", "mkdir"},
+	{"dyaz", "fwrite"},
+	{"dkapat", "fclose"},
+	{"daç", "fopen"},
+	{"boyut_t", "size_t"},
+	{"komut_yürüt", "execvp"},
+	{"çatal", "fork"},
+	{"beklepid", "waitpid"},
+	{"sistem", "system"},
 
+	{HİÇ, HİÇ}
+};
+
+KeywordMap pkmap[] = {
 	{"#ekle", "#include"},
 	{"#tanımla", "#define"},
 	{"#tanımsil", "#undef"},
 	{"#eğertanımlı", "#ifdef"},
 	{"#değiltanımlı", "#ifndef"},
 	{"#eğerson", "#endif"},
+	{"#yönerge", "#pragma"},
 
 	{"stdgç.b", "stdio.h"},
 	{"stdtam.b", "stdint.h"},
 	{"stdküt.b", "stdlib.h"},
-	{"ip.b", "string.h"},
 	{"evrstd.b", "unistd.h"},
+	{"hatano.b", "errno.h"},
+	{"ckarakter.b", "ctype.h"},
+	{"doğrulama.b", "assert.h"},
+	{"stdmantık.b", "stdbool.h"},
+	{"stdtan.b", "stddef.h"},
 
-	{"bellekal", "malloc"},
-	{"tekraral", "realloc"},
-	{"bırak", "free"},
-	{"bellkopy", "memcpy"},
-	{"ipkopy", "strcpy"},
-
-	{"yazdırf", "printf"},
-	{"ana", "main"},
-	{"çık", "exit"},
-
-	{"git", "goto"},
-
-	{NULL, NULL}
+	{"sis/türler.b", "sys/types.h"},
+	{"sis/bekle.b", "sys/wait.h"},
+	{"sistem/durum.h", "sys/stat.h"},
+	{"birkere", "once"},
+	{HİÇ, HİÇ}
 };
 
-sabit kar* find_keyword(sabit kar* word, size_t len) {
-	için (tam i = 0; kmap[i].from != NULL; ++i) {
-		eğer (strncmp(kmap[i].from, word, len) == 0 && strlen(kmap[i].from) == len) {
+sabit kar* find_keyword(sabit kar* word, boyut_t len) {
+	için (tam i = 0; kmap[i].from != HİÇ; ++i) {
+		eğer (ip_sınırlı_karşılaştır(kmap[i].from, word, len) == 0 && ip_uzunluk(kmap[i].from) == len) {
 			döndür kmap[i].to;
 		}
 	}
-	döndür NULL;
+	döndür HİÇ;
 }
 
-sabit kar* find_keywordr(sabit kar* word, size_t len) {
-	için (tam i = 0; kmap[i].to != NULL; ++i) {
-		eğer (strncmp(kmap[i].to, word, len) == 0 && strlen(kmap[i].to) == len) {
+sabit kar* find_keywordr(sabit kar* word, boyut_t len) {
+	için (tam i = 0; kmap[i].to != HİÇ; ++i) {
+		eğer (ip_sınırlı_karşılaştır(kmap[i].to, word, len) == 0 && ip_uzunluk(kmap[i].to) == len) {
 			döndür kmap[i].from;
 		}
 	}
-	döndür NULL;
+	döndür HİÇ;
 }
 
+
+sabit kar* find_keyword_preproc(sabit kar* word, boyut_t len) {
+	için (tam i = 0; pkmap[i].from != HİÇ; ++i) {
+		eğer (ip_sınırlı_karşılaştır(pkmap[i].from, word, len) == 0 && ip_uzunluk(pkmap[i].from) == len) {
+			döndür pkmap[i].to;
+		}
+	}
+	döndür find_keyword(word, len);
+}
+sabit kar* find_keyword_preprocr(sabit kar* word, boyut_t len) {
+	için (tam i = 0; pkmap[i].to != HİÇ; ++i) {
+		eğer (ip_sınırlı_karşılaştır(pkmap[i].to, word, len) == 0 && ip_uzunluk(pkmap[i].to) == len) {
+			döndür pkmap[i].from;
+		}
+	}
+	döndür find_keywordr(word, len);
+}
 // ---------------------------------------- dictionary.c
-
-#ekle <assert.h>
-#ekle <stdbool.h>
+#ekle <doğrulama.b>
+#ekle <stdmantık.b>
 #ekle <evrstd.b>
-
-
-#tanımla INTERMEDIATE_DIR "./build/tam/"
 
 türtanımla yapı {
 	kar* cc_override;
 	mantık pack_tight;
 	mantık from_c_to_cy;
+	mantık retain_intermediate;
 } Options;
 
 Options options_new_default() {
 	Options op = {
-		.cc_override = NULL,
-		.pack_tight = false,
-		.from_c_to_cy = false,
+		.cc_override = HİÇ,
+		.pack_tight = yanlış,
+		.from_c_to_cy = yanlış,
+		.retain_intermediate = yanlış,
 	};
 	döndür op;
 }
@@ -513,17 +557,17 @@ Options options_new_default() {
 // file_path   must be null terminated
 // output_path must be null terminated
 mantık compile_to_c(sabit kar* file_path, sabit kar* output_path, Options options) {
-	mantık result = true;
+	mantık result = doğru;
 	StringBuilder source = sb_new();
 	StringBuilder output = sb_new();
 
-	eğer (!read_entire_file(file_path, &source)) { result = false; git defer; }
+	eğer (!read_entire_file(file_path, &source)) { result = yanlış; git defer; }
 
 
 	Lexer lexer = lexer_new(source);
 	Token token = lexer_next(&lexer);
 
-	size_t cursor = 0;
+	boyut_t cursor = 0;
 	iken (token.type != TOKEN_END) {
 		eğer (!options.pack_tight) {
 			iken (&(lexer.content[cursor]) != token.text) {
@@ -533,17 +577,13 @@ mantık compile_to_c(sabit kar* file_path, sabit kar* output_path, Options optio
 		}
 
 		eğer (token.type == TOKEN_SYMBOL) {
-			sabit kar* to = NULL;
-			eğer (options.from_c_to_cy) {
-				to = find_keywordr(token.text, token.length);
+			sabit kar* to = HİÇ;
+			eğer (lexer.preprocessor_mode) {
+				to = options.from_c_to_cy ? find_keyword_preprocr(token.text, token.length) : find_keyword_preproc(token.text, token.length);
 			} değilse {
-				to = find_keyword(token.text, token.length);
+				to = options.from_c_to_cy ? find_keywordr(token.text, token.length) : find_keyword(token.text, token.length);
 			}
-			eğer (to) {
-				da_append_many(&output, to, strlen(to));
-			} değilse {
-				da_append_many(&output, token.text, token.length);
-			}
+			da_append_many(&output, to ? to : token.text, to ? ip_uzunluk(to) : token.length);
 		} değilse {
 			da_append_many(&output, token.text, token.length);
 		}
@@ -565,16 +605,20 @@ mantık compile_to_c(sabit kar* file_path, sabit kar* output_path, Options optio
 	}
 
 	mkdirs_recursive(output_path);
-	eğer (!write_to_file(output_path, &output)) { result = false; git defer; }
+	eğer (!write_to_file(output_path, &output)) { result = yanlış; git defer; }
 
 defer:
 	bırak(source.items);
 	bırak(output.items);
 	döndür result;
 }
+
 // ---------------------------------------- compiler.c
+#ekle <sis/türler.b>
+#ekle <sis/bekle.b>
 
 #tanımla DEFAULT_CC "gcc" // or "clang"
+#tanımla PATH_MAX 256
 
 tam ana(tam argc, kar** argv) {
 	kar* cc_args[argc+3];
@@ -589,24 +633,27 @@ tam ana(tam argc, kar** argv) {
 
 	Options op = options_new_default();
 
-	mantık parsing_cey_args = false;
+	mantık parsing_cey_args = yanlış;
 
 	için (tam i = 1; i < argc; i++) {
 		kar* arg = argv[i];
-		eğer (!parsing_cey_args && strcmp(arg, "--") == 0) {
-			parsing_cey_args = true;
+		eğer (!parsing_cey_args && ip_karşılaştır(arg, "--") == 0) {
+			parsing_cey_args = doğru;
 			devam;
 		}
 
 		eğer (parsing_cey_args) {
-			eğer (strncmp(arg, "--cc=", 5) == 0) {
+			eğer (ip_sınırlı_karşılaştır(arg, "--cc=", 5) == 0) {
 				op.cc_override = arg + 5;
-			} değilse eğer (strncmp(arg, "--pack",6) == 0) {
-				op.pack_tight = true;
-			} değilse eğer (strncmp(arg, "--yec",5) == 0) {
-				op.from_c_to_cy = true;
+			} değilse eğer (ip_sınırlı_karşılaştır(arg, "--pack",6) == 0) {
+				op.pack_tight = doğru;
+			} değilse eğer (ip_sınırlı_karşılaştır(arg, "--yec",5) == 0) {
+				op.from_c_to_cy = doğru;
+				op.retain_intermediate = doğru;
+			} değilse eğer (ip_sınırlı_karşılaştır(arg, "--int",5) == 0) {
+				op.retain_intermediate = doğru;
 			} değilse {
-				fprintf(stderr, "unknown cey flag: %s\n", arg);
+				fyazdırf(stdhata, "[ERROR] unknown cey flag: %s\n", arg);
 				çık(1);
 			}
 			devam;
@@ -619,29 +666,25 @@ tam ana(tam argc, kar** argv) {
 		}
 	}
 
-	eğer (to_compile_count < 0) {
-		fprintf(stderr, "no source file provided\n");
+	eğer (to_compile_count <= 0) {
+		fyazdırf(stdhata, "[ERROR] no source file provided\n");
 		çık(1);
-	} değilse {
-		StringBuilder sb_arg = sb_new();
-		iken (--to_compile_count >= 0) {
-			kar* arg = to_compile[to_compile_count];
-			sb_arg.count = 0;
-			da_append_many(&sb_arg, INTERMEDIATE_DIR, strlen(INTERMEDIATE_DIR));
-			sabit kar* filename = get_filename(arg);
-			da_append_many(&sb_arg, filename, strlen(filename));
-			da_append(&sb_arg, '\0');
-			// heap-copy the string since sb_arg will change
-			cc_args[cc_argc] = strdup(sb_arg.items);
-			mantık result = compile_to_c(arg, cc_args[cc_argc], op);
-			cc_argc++;
-			eğer (!result) {
-				fprintf(stderr, "compilation failed for %s\n", arg);
-				// should we cleanup?
-				çık(1);
-			}
+	}
+
+	kar tmp_template[] = "/tmp/cey_tmp_XXXXXX";
+	kar* tmp_dir = mkdtemp(tmp_template);
+
+	için (tam i = 0; i < to_compile_count; i++) {
+		sabit kar* file = to_compile[i];
+		kar tmp_file[PATH_MAX];
+		snyazdırf(tmp_file, boyut(tmp_file), "%s/%s", tmp_dir, get_filename(file));
+		cc_args[cc_argc] = strdup(tmp_file);
+
+		eğer (!compile_to_c(file, cc_args[cc_argc], op)) {
+			fyazdırf(stdhata, "[ERROR] compilation failed for %s\n", file);
+			çık(1);
 		}
-		bırak(sb_arg.items);
+		cc_argc++;
 	}
 
 	eğer (op.from_c_to_cy) {
@@ -652,16 +695,32 @@ tam ana(tam argc, kar** argv) {
 		cc_args[0] = op.cc_override;
 	}
 
-	cc_args[cc_argc] = NULL;
+	cc_args[cc_argc] = HİÇ;
 
-	yazdırf("executing: ");
+	yazdırf("[INFO] executing: ");
 	için (tam i = 0; i < cc_argc; ++i) {
 		yazdırf("%s ", cc_args[i]);
 	}
 	yazdırf("\n");
 
-	execvp(cc_args[0], cc_args);
+	pid_t pid = çatal();
+	eğer (pid == 0) {
+		komut_yürüt(cc_args[0], cc_args);
+		çık(1);
+	} değilse {
+		tam status;
+		beklepid(pid, &status, 0);
+		eğer (!op.retain_intermediate) {
+			kar cmd[256];
+			snyazdırf(cmd, boyut(cmd), "rm -rf %s", tmp_dir);
+			sistem(cmd);
+		}
+		eğer (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+			çık(WEXITSTATUS(status));
+		}
+	}
 
+	// NOTE: intentionally not freeing, less clutter
 	döndür 0;
 }
 // ---------------------------------------- cey.c

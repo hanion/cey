@@ -162,8 +162,8 @@ Token lexer_next(Lexer* l) {
 		token.type = TOKEN_SYMBOL;
 		while (l->cursor < l->content_length) {
 			if (!is_symbol(l->content[l->cursor])) {
-				if (l->preprocessor_mode && lexer_match(l, '.')) {
-					// the '.' in #ekle <stdgç.b>
+				if (l->preprocessor_mode && (lexer_match(l, '.') || lexer_match(l, '/'))) {
+					// the '.' in #ekle
 				} else {
 					break;
 				}

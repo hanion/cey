@@ -7,9 +7,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-
-#define INTERMEDIATE_DIR "./build/int/"
-
 typedef struct {
 	char* cc_override;
 	bool pack_tight;
@@ -51,16 +48,12 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 
 		if (token.type == TOKEN_SYMBOL) {
 			const char* to = NULL;
-			if (options.from_c_to_cy) {
-				to = find_keywordr(token.text, token.length);
+			if (lexer.preprocessor_mode) {
+				to = options.from_c_to_cy ? find_keyword_preprocr(token.text, token.length) : find_keyword_preproc(token.text, token.length);
 			} else {
-				to = find_keyword(token.text, token.length);
+				to = options.from_c_to_cy ? find_keywordr(token.text, token.length) : find_keyword(token.text, token.length);
 			}
-			if (to) {
-				da_append_many(&output, to, strlen(to));
-			} else {
-				da_append_many(&output, token.text, token.length);
-			}
+			da_append_many(&output, to ? to : token.text, to ? strlen(to) : token.length);
 		} else {
 			da_append_many(&output, token.text, token.length);
 		}

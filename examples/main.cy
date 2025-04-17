@@ -1,7 +1,6 @@
 #ekle "stdgç.b"
 #ekle <stdtam.b>
 #ekle <stdküt.b>
-#ekle <ip.b>
 #ekle <evrstd.b>
 //#ekle <_123-"\">;
 
