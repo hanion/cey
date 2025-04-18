@@ -37,18 +37,25 @@ Only files ending with `.cy` are compiled by `cey`. All other files and argument
 Use `--` to separate C compiler arguments from `cey` options, if any.
 - `--pack`: Minify the generated C file (removes whitespace, breaks error messages).
 - `--cc=gcc` or `--cc=clang`: Choose the backend compiler. Default is `gcc`.
+- `--int`: Preserve the intermediate files.
 
 ## Output
-Intermediate C files are written to: `./build/int/<filename>.cy`
+Intermediate files are written to `/tmp/cey_tmp_*/` and automatically deleted after compilation.
 
 ## Reverse cey - yec
-Use `--yec` to reverse-compile a C file to C*. This only performs transpilation, not compilation.
+`yec` is a separate binary used to reverse-transpile C code to C*.
+It only performs transpilation, not compilation.
 ```bash
-cey ./src/cey.c -- --yec
+yec <source_file> <destination_file>
 ```
 
 ## Bootstrap
-The C* source code for the compiler itself is in `examples/cey.cy`.
+To fully rebuild the compiler from its own source using the current toolchain, run:
 ```bash
-cey examples/cey.cy -o cey
+make bootstrap
 ```
+This will:
+- Use `amalgamator` to generate an amalgamated C* source file from `src/cey.c` and save it as `build/amalgamation.c`.  
+- Reverse-transpile the amalgamated C* source into C* (`examples/cey.cy`) using `yec`.  
+- Compile `cey.cy` with the current `cey` compiler to produce a new `cey` binary, replacing the existing one in `build/cey`.
+

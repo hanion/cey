@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall -Werror -g3
 
-.PHONY: all clean
+.PHONY: all clean bootstrap
 
-all: build/cey build/yec bootstrap
+all: build/cey build/yec
 
 clean:
 	rm -rf build
@@ -26,6 +26,5 @@ bootstrap: build build/amalgamator build/yec build/cey
 	build/amalgamator src/cey.c -I src -o build/amalgamation.c
 	rm -f build/cey.cy
 	build/yec build/amalgamation.c build/cey.cy
-	build/cey  $(CFLAGS) -o build/bcey build/cey.cy
-	build/bcey $(CFLAGS) -o build/bcey build/cey.cy
+	build/cey  $(CFLAGS) -o build/cey build/cey.cy
 
