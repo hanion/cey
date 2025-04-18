@@ -70,7 +70,12 @@ KeywordMap kmap[] = {
 	{"çatal", "fork"},
 	{"beklepid", "waitpid"},
 	{"sistem", "system"},
-
+	{"doğrula", "assert"},
+	{"boşluk_mu", "isspace"},
+	{"harf_mi", "isalpha"},
+	{"alfanümerik_mi", "isalnum"},
+	{"DOSYA", "FILE"},
+	{"hata_mesajı", "strerror"},
 	{NULL, NULL}
 };
 
@@ -81,6 +86,7 @@ KeywordMap pkmap[] = {
 	{"#eğertanımlı", "#ifdef"},
 	{"#değiltanımlı", "#ifndef"},
 	{"#eğerson", "#endif"},
+	{"#değilse", "#else"},
 	{"#yönerge", "#pragma"},
 
 	{"stdgç.b", "stdio.h"},

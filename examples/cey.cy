@@ -14,7 +14,7 @@
 				(da)->capacity *= 2;                                                       \
 			}                                                                              \
 			(da)->items = tekraral((da)->items, (da)->capacity * boyut(*(da)->items));     \
-			assert((da)->items != HİÇ);                                                   \
+			doğrula((da)->items != HİÇ);                                                   \
 		}                                                                                  \
 	} iken (0)
 
@@ -95,7 +95,6 @@ boşluk lexer_skip_until_new_line(Lexer* l);
 
 Token lexer_next(Lexer* l);
 
-#ekle "string.h"
 
 #ekle <doğrulama.b>
 #ekle <ckarakter.b>
@@ -120,11 +119,11 @@ mantık is_integer(kar c) {
 }
 
 mantık is_symbol_start(kar c) {
-	döndür (işaretsiz kar)c >= 128 || isalpha(c) || c == '_';
+	döndür (işaretsiz kar)c >= 128 || harf_mi(c) || c == '_';
 }
 
 mantık is_symbol(kar c) {
-	döndür (işaretsiz kar)c >= 128 || isalnum(c) || c == '_';
+	döndür (işaretsiz kar)c >= 128 || alfanümerik_mi(c) || c == '_';
 }
 
 
@@ -140,7 +139,7 @@ Lexer lexer_new(StringBuilder sb) {
 }
 
 kar lexer_advance(Lexer* l) {
-	assert(l->cursor < l->content_length);
+	doğrula(l->cursor < l->content_length);
 	kar c = l->content[l->cursor];
 	l->cursor++;
 	döndür c;
@@ -173,7 +172,7 @@ mantık lexer_match_string(Lexer* l, sabit kar* str, boyut_t len) {
 
 // does not trim newline
 boşluk lexer_trim_left(Lexer* l) {
-	iken (l->cursor < l->content_length && isspace(l->content[l->cursor]) && l->content[l->cursor] != '\n') {
+	iken (l->cursor < l->content_length && boşluk_mu(l->content[l->cursor]) && l->content[l->cursor] != '\n') {
 		lexer_advance(l);
 	}
 }
@@ -315,20 +314,20 @@ Token lexer_next(Lexer* l) {
 #ekle <stdgç.b>
 #ekle <stdküt.b>
 #ekle <string.h>
-#ekle "string.h"
+
 #ekle <sistem/durum.h>
 
 
 mantık read_entire_file(sabit kar *path, StringBuilder *sb) {
 	mantık result = doğru;
 
-	FILE *f = daç(path, "rb");
+	DOSYA *f = daç(path, "rb");
 	eğer (f == HİÇ) { result = yanlış; git defer; }
 	eğer (fseek(f, 0, SEEK_END) < 0) { result = yanlış; git defer; }
 
 #değiltanımlı _WIN32
 	uzun m = ftell(f);
-#else
+#değilse
 	uzun uzun m = _ftelli64(f);
 #eğerson
 
@@ -338,7 +337,7 @@ mantık read_entire_file(sabit kar *path, StringBuilder *sb) {
 	boyut_t new_count = sb->count + m;
 	eğer (new_count > sb->capacity) {
 		sb->items = tekraral(sb->items, new_count);
-		assert(sb->items != HİÇ);
+		doğrula(sb->items != HİÇ);
 		sb->capacity = new_count;
 	}
 
@@ -353,7 +352,7 @@ defer:
 }
 
 mantık write_to_file(sabit kar *path, StringBuilder *sb) {
-	FILE *f = daç(path, "wb");
+	DOSYA *f = daç(path, "wb");
 	eğer (f == HİÇ) {
 		yazdırf("Could not open file for writing: %s\n", strerror(errno));
 		döndür yanlış;
@@ -481,7 +480,12 @@ KeywordMap kmap[] = {
 	{"çatal", "fork"},
 	{"beklepid", "waitpid"},
 	{"sistem", "system"},
-
+	{"doğrula", "assert"},
+	{"boşluk_mu", "isspace"},
+	{"harf_mi", "isalpha"},
+	{"alfanümerik_mi", "isalnum"},
+	{"DOSYA", "FILE"},
+	{"hata_mesajı", "strerror"},
 	{HİÇ, HİÇ}
 };
 
@@ -492,6 +496,7 @@ KeywordMap pkmap[] = {
 	{"#eğertanımlı", "#ifdef"},
 	{"#değiltanımlı", "#ifndef"},
 	{"#eğerson", "#endif"},
+	{"#değilse", "#else"},
 	{"#yönerge", "#pragma"},
 
 	{"stdgç.b", "stdio.h"},

@@ -1,5 +1,4 @@
 #include "lexer.h"
-#include "string.h"
 #include "lexer.c"
 #include "file.c"
 #include "dictionary.c"
