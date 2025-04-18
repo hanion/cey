@@ -1,5 +1,7 @@
-// ++++++++++++++++++++++++++++++++++++++++ cey.c
-// ++++++++++++++++++++++++++++++++++++++++ string.h
+#ekle <sis/türler.b>
+#ekle <sis/bekle.b>
+
+
 #ekle <stdtan.b>
 
 #tanımla da_reserve(da, expected_capacity)                                                  \
@@ -42,8 +44,7 @@ StringBuilder sb_new() {
 	döndür sb;
 }
 
-// ---------------------------------------- string.h
-// ++++++++++++++++++++++++++++++++++++++++ lexer.h
+
 #ekle <stdküt.b>
 #ekle <stdmantık.b>
 
@@ -51,7 +52,7 @@ türtanımla sıralı {
 	TOKEN_END = 0,
 	TOKEN_INVALID,
 	TOKEN_DONT_CARE,
-	TOKEN_PREPROC_END,
+	TOKEN_NEWLINE,
 	TOKEN_COMMENT,
 	TOKEN_LITERAL,
 	TOKEN_INTEGER,
@@ -62,6 +63,7 @@ türtanımla yapı {
 	TokenType type;
 	sabit kar* text;
 	boyut_t length;
+	mantık preproc_end;
 } Token;
 
 türtanımla yapı {
@@ -88,13 +90,13 @@ kar lexer_advance(Lexer* l);
 mantık lexer_match_next(Lexer* l, kar c);
 mantık lexer_match_string(Lexer* l, sabit kar* str, boyut_t len);
 boşluk lexer_trim_left(Lexer* l);
-boşluk lexer_skip_to_next_line(Lexer* l);
+boşluk lexer_skip_until_new_line(Lexer* l);
 
 
 Token lexer_next(Lexer* l);
-// ---------------------------------------- lexer.h
-// ++++++++++++++++++++++++++++++++++++++++ compiler.c
-// ++++++++++++++++++++++++++++++++++++++++ lexer.c
+
+#ekle "string.h"
+
 #ekle <doğrulama.b>
 #ekle <ckarakter.b>
 
@@ -169,12 +171,13 @@ mantık lexer_match_string(Lexer* l, sabit kar* str, boyut_t len) {
 	döndür doğru;
 }
 
+// does not trim newline
 boşluk lexer_trim_left(Lexer* l) {
-	iken (l->cursor < l->content_length && isspace(l->content[l->cursor])) {
+	iken (l->cursor < l->content_length && isspace(l->content[l->cursor]) && l->content[l->cursor] != '\n') {
 		lexer_advance(l);
 	}
 }
-boşluk lexer_skip_to_next_line(Lexer* l) {
+boşluk lexer_skip_until_new_line(Lexer* l) {
 	iken (l->cursor < l->content_length && l->content[l->cursor] != '\n') {
 		lexer_advance(l);
 	}
@@ -187,18 +190,31 @@ Token lexer_next(Lexer* l) {
 	Token token = {
 		.type = TOKEN_END,
 		.text = &l->content[l->cursor],
-		.length = 0
+		.length = 0,
+		.preproc_end = yanlış
 	};
 
 	eğer (l->cursor >= l->content_length) {
 		döndür token;
 	}
 
+	eğer (lexer_match(l, '\n')) {
+		lexer_advance(l);
+		token.type = TOKEN_NEWLINE;
+		token.length = 1;
+		// TODO: handle '\'
+		eğer (l->preprocessor_mode) {
+			token.preproc_end = doğru;
+			l->preprocessor_mode = yanlış;
+			l->preprocessor_in_string = yanlış;
+		}
+		döndür token;
+	}
 
 	eğer (lexer_match(l, '/')) {
 		boyut_t start = l->cursor;
 		eğer (lexer_match_next(l, '/')) {
-			lexer_skip_to_next_line(l);
+			lexer_skip_until_new_line(l);
 			token.length = l->cursor-start;
 			token.type = TOKEN_COMMENT;
 			döndür token;
@@ -219,23 +235,19 @@ Token lexer_next(Lexer* l) {
 	eğer (l->preprocessor_mode) {
 		eğer (lexer_match(l, '>')) {
 			lexer_advance(l);
-			l->preprocessor_mode = yanlış;
-			token.type = TOKEN_PREPROC_END;
+			token.type = TOKEN_DONT_CARE;
 			token.length = 1;
 			döndür token;
 		}
 		eğer (lexer_match(l, '"')) {
 			lexer_advance(l);
+			token.type = TOKEN_DONT_CARE;
+			token.length = 1;
 			eğer (!l->preprocessor_in_string) {
 				l->preprocessor_in_string = doğru;
-				token.type = TOKEN_DONT_CARE;
-				token.length = 1;
 				döndür token;
 			}
 			l->preprocessor_in_string = yanlış;
-			l->preprocessor_mode = yanlış;
-			token.type = TOKEN_PREPROC_END;
-			token.length = 1;
 			döndür token;
 		}
 	}
@@ -295,14 +307,15 @@ Token lexer_next(Lexer* l) {
 }
 
 
-// ---------------------------------------- lexer.c
-// ++++++++++++++++++++++++++++++++++++++++ file.c
+
+
 #ekle <doğrulama.b>
 #ekle <hatano.b>
 #ekle <stdmantık.b>
 #ekle <stdgç.b>
 #ekle <stdküt.b>
 #ekle <string.h>
+#ekle "string.h"
 #ekle <sistem/durum.h>
 
 
@@ -395,8 +408,9 @@ mantık ends_with(sabit kar* str, sabit kar* w) {
 mantık is_cey_file(sabit kar* filename) {
 	döndür ends_with(filename, ".cy");
 }
-// ---------------------------------------- file.c
-// ++++++++++++++++++++++++++++++++++++++++ dictionary.c
+
+#ekle <string.h>
+
 türtanımla yapı {
 	sabit kar* from;
 	sabit kar* to;
@@ -532,7 +546,7 @@ sabit kar* find_keyword_preprocr(sabit kar* word, boyut_t len) {
 	}
 	döndür find_keywordr(word, len);
 }
-// ---------------------------------------- dictionary.c
+
 #ekle <doğrulama.b>
 #ekle <stdmantık.b>
 #ekle <evrstd.b>
@@ -585,19 +599,21 @@ mantık compile_to_c(sabit kar* file_path, sabit kar* output_path, Options optio
 			}
 			da_append_many(&output, to ? to : token.text, to ? ip_uzunluk(to) : token.length);
 		} değilse {
-			da_append_many(&output, token.text, token.length);
+			eğer (!options.pack_tight || token.type != TOKEN_NEWLINE) {
+				da_append_many(&output, token.text, token.length);
+			}
 		}
 
 		cursor += token.length;
-		TokenType prev = token.type;
+		Token prev = token;
 		token = lexer_next(&lexer);
 
 		eğer (options.pack_tight) {
-			eğer (prev == TOKEN_COMMENT || prev == TOKEN_PREPROC_END) {
+			eğer (prev.type == TOKEN_COMMENT || prev.preproc_end) {
 				da_append(&output, '\n');
 			}
 			eğer (token.type == TOKEN_SYMBOL || token.type == TOKEN_INTEGER) {
-				eğer (prev == TOKEN_SYMBOL) {
+				eğer (prev.type == TOKEN_SYMBOL) {
 					da_append(&output, ' ');
 				}
 			}
@@ -613,9 +629,7 @@ defer:
 	döndür result;
 }
 
-// ---------------------------------------- compiler.c
-#ekle <sis/türler.b>
-#ekle <sis/bekle.b>
+
 
 #tanımla DEFAULT_CC "gcc" // or "clang"
 #tanımla PATH_MAX 256
@@ -723,4 +737,3 @@ tam ana(tam argc, kar** argv) {
 	// NOTE: intentionally not freeing, less clutter
 	döndür 0;
 }
-// ---------------------------------------- cey.c
