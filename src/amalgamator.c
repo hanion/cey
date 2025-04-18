@@ -1,3 +1,4 @@
+#include "da.h"
 #include "lexer.h"
 #include "lexer.c"
 #include "file.c"
@@ -9,8 +10,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define MAX_PATH 1024
-#define INITIAL_CAPACITY 1024
 #define MAX_INPUTS 128
 
 
@@ -69,7 +68,7 @@ typedef struct {
 
 bool find_file_path(Amalgamator* a, char* filename, StringBuilder* out_fp) {
 	if (access(filename, F_OK) == 0) {
-		out_fp->items = filename;
+		out_fp->items = strdup(filename);
 		out_fp->count = strlen(filename);
 		out_fp->capacity = out_fp->count;
 		return true;
@@ -124,11 +123,11 @@ bool process_file(Amalgamator* a, const char *file) {
 			bool included = false;
 			if (find_file_path(a, filename.items, &found_fp)) {
 				if (!included_files_contains(&a->included_files, found_fp.items)) {
+					included_files_add(&a->included_files, found_fp.items);
 					if (!process_file(a, found_fp.items)) {
 						printf("failed to process file %.*s\n", (int)filename.count, filename.items);
 						return false;
 					}
-					included_files_add(&a->included_files, found_fp.items);
 				}
 				included = true;
 			}
@@ -187,6 +186,8 @@ void print_usage() {
 }
 
 int main(int argc, char *argv[]) {
+	int result = 0;
+
 	if (argc < 5) {
 		print_usage();
 		return 1;
@@ -211,7 +212,7 @@ int main(int argc, char *argv[]) {
 				break;
 			default:
 				print_usage();
-				return 1;
+				result = 1; goto defer;
 		}
 	}
 
@@ -221,24 +222,42 @@ int main(int argc, char *argv[]) {
 
 	if (a.source_files_count == 0 || a.output_file == NULL) {
 		print_usage();
-		return 1;
+		result = 1; goto defer;
 	}
 
 
-	bool proc = process_file(&a, a.source_files[0]);
-	if (!proc) {
-		return 1;
+	StringBuilder sb_source_file = sb_new();
+	for (size_t i = 0; i < a.source_files_count; ++i) {
+		sb_source_file.count = 0;
+		if (find_file_path(&a, a.source_files[i], &sb_source_file)) {
+			if (!included_files_contains(&a.included_files, sb_source_file.items)) {
+				included_files_add(&a.included_files, sb_source_file.items);
+				if (!process_file(&a, sb_source_file.items)) {
+					printf("failed to process file %s\n", a.source_files[i]);
+					result = 1; goto defer;
+				}
+			}
+		} else {
+			fprintf(stderr, "file not found: %s", a.source_files[i]);
+			result = 1; goto defer;
+		}
 	}
 
 	mkdirs_recursive(a.output_file);
 	if (!write_to_file(a.output_file, &a.output)) {
 		perror("write_to_file error");
-		free(a.output.items);
-		return 1;
+		result = 1; goto defer;
+	}
+
+defer:
+	if (result == 0) {
+		printf("amalgamation completed successfully.\n");
+	} else {
+		printf("amalgamation failed.\n");
 	}
 	free(a.output.items);
-
-	printf("amalgamation completed successfully.\n");
-	return 0;
+	free(a.included_files.files);
+	free(sb_source_file.items);
+	return result;
 }
 
