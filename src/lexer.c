@@ -73,12 +73,13 @@ bool lexer_match_string(Lexer* l, const char* str, size_t len) {
 	return true;
 }
 
+// does not trim newline
 void lexer_trim_left(Lexer* l) {
-	while (l->cursor < l->content_length && isspace(l->content[l->cursor])) {
+	while (l->cursor < l->content_length && isspace(l->content[l->cursor]) && l->content[l->cursor] != '\n') {
 		lexer_advance(l);
 	}
 }
-void lexer_skip_to_next_line(Lexer* l) {
+void lexer_skip_until_new_line(Lexer* l) {
 	while (l->cursor < l->content_length && l->content[l->cursor] != '\n') {
 		lexer_advance(l);
 	}
@@ -91,18 +92,31 @@ Token lexer_next(Lexer* l) {
 	Token token = {
 		.type = TOKEN_END,
 		.text = &l->content[l->cursor],
-		.length = 0
+		.length = 0,
+		.preproc_end = false
 	};
 
 	if (l->cursor >= l->content_length) {
 		return token;
 	}
 
+	if (lexer_match(l, '\n')) {
+		lexer_advance(l);
+		token.type = TOKEN_NEWLINE;
+		token.length = 1;
+		// TODO: handle '\'
+		if (l->preprocessor_mode) {
+			token.preproc_end = true;
+			l->preprocessor_mode = false;
+			l->preprocessor_in_string = false;
+		}
+		return token;
+	}
 
 	if (lexer_match(l, '/')) {
 		size_t start = l->cursor;
 		if (lexer_match_next(l, '/')) {
-			lexer_skip_to_next_line(l);
+			lexer_skip_until_new_line(l);
 			token.length = l->cursor-start;
 			token.type = TOKEN_COMMENT;
 			return token;
@@ -123,23 +137,19 @@ Token lexer_next(Lexer* l) {
 	if (l->preprocessor_mode) {
 		if (lexer_match(l, '>')) {
 			lexer_advance(l);
-			l->preprocessor_mode = false;
-			token.type = TOKEN_PREPROC_END;
+			token.type = TOKEN_DONT_CARE;
 			token.length = 1;
 			return token;
 		}
 		if (lexer_match(l, '"')) {
 			lexer_advance(l);
+			token.type = TOKEN_DONT_CARE;
+			token.length = 1;
 			if (!l->preprocessor_in_string) {
 				l->preprocessor_in_string = true;
-				token.type = TOKEN_DONT_CARE;
-				token.length = 1;
 				return token;
 			}
 			l->preprocessor_in_string = false;
-			l->preprocessor_mode = false;
-			token.type = TOKEN_PREPROC_END;
-			token.length = 1;
 			return token;
 		}
 	}

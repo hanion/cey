@@ -55,19 +55,21 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 			}
 			da_append_many(&output, to ? to : token.text, to ? strlen(to) : token.length);
 		} else {
-			da_append_many(&output, token.text, token.length);
+			if (!options.pack_tight || token.type != TOKEN_NEWLINE) {
+				da_append_many(&output, token.text, token.length);
+			}
 		}
 
 		cursor += token.length;
-		TokenType prev = token.type;
+		Token prev = token;
 		token = lexer_next(&lexer);
 
 		if (options.pack_tight) {
-			if (prev == TOKEN_COMMENT || prev == TOKEN_PREPROC_END) {
+			if (prev.type == TOKEN_COMMENT || prev.preproc_end) {
 				da_append(&output, '\n');
 			}
 			if (token.type == TOKEN_SYMBOL || token.type == TOKEN_INTEGER) {
-				if (prev == TOKEN_SYMBOL) {
+				if (prev.type == TOKEN_SYMBOL) {
 					da_append(&output, ' ');
 				}
 			}

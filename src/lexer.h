@@ -7,7 +7,7 @@ typedef enum {
 	TOKEN_END = 0,
 	TOKEN_INVALID,
 	TOKEN_DONT_CARE,
-	TOKEN_PREPROC_END,
+	TOKEN_NEWLINE,
 	TOKEN_COMMENT,
 	TOKEN_LITERAL,
 	TOKEN_INTEGER,
@@ -18,6 +18,7 @@ typedef struct {
 	TokenType type;
 	const char* text;
 	size_t length;
+	bool preproc_end;
 } Token;
 
 typedef struct {
@@ -44,7 +45,7 @@ char lexer_advance(Lexer* l);
 bool lexer_match_next(Lexer* l, char c);
 bool lexer_match_string(Lexer* l, const char* str, size_t len);
 void lexer_trim_left(Lexer* l);
-void lexer_skip_to_next_line(Lexer* l);
+void lexer_skip_until_new_line(Lexer* l);
 
 
 Token lexer_next(Lexer* l);
