@@ -55,7 +55,7 @@ To fully rebuild the compiler from its own source using the current toolchain, r
 make bootstrap
 ```
 This will:
-- Use `amalgamator` to generate an amalgamated C* source file from `src/cey.c` and save it as `build/amalgamation.c`.  
-- Reverse-transpile the amalgamated C* source into C* (`examples/cey.cy`) using `yec`.  
+- Use `amalgamator` to generate an amalgamated C source file from `src/cey.c` and save it as `build/amalgamation.c`.  
+- Reverse-transpile the amalgamated C source into C* (`examples/cey.cy`) using `yec`.  
 - Compile `cey.cy` with the current `cey` compiler to produce a new `cey` binary, replacing the existing one in `build/cey`.
 
