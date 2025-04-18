@@ -24,7 +24,7 @@ build/amalgamator: src/amalgamator.c | build
 bootstrap: build build/amalgamator build/yec build/cey
 	@echo "bootstrapping..."
 	build/amalgamator src/cey.c -I src -o build/amalgamation.c
-	rm -f build/cey.cy
-	build/yec build/amalgamation.c build/cey.cy
-	build/cey  $(CFLAGS) -o build/cey build/cey.cy
+	rm -f examples/cey.cy
+	build/yec build/amalgamation.c examples/cey.cy
+	build/cey  $(CFLAGS) -o build/cey examples/cey.cy
 
