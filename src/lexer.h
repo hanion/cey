@@ -16,8 +16,7 @@ typedef enum {
 
 typedef struct {
 	TokenType type;
-	const char* text;
-	size_t length;
+	StringView text;
 	bool preproc_end;
 } Token;
 

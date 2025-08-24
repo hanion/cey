@@ -28,16 +28,19 @@
 		(da)->count += (new_items_count);                                                       \
 	} while (0)
 
+#define da_append_cstr(da, cstr) da_append_many((da), (cstr), strlen((cstr)))
+#define da_append_sv(da, sv)     da_append_many((da), (sv)->items, (sv)->count)
+#define da_append_token(da, tok) da_append_sv  ((da), &(tok).text)
+
 typedef struct {
 	char *items;
 	size_t count;
 	size_t capacity;
 } StringBuilder;
 
-StringBuilder sb_new() {
-	StringBuilder sb = {
-		.items = NULL, .count = 0, .capacity = 0
-	};
-	return sb;
-}
+typedef struct {
+	char *items;
+	size_t count;
+} StringView;
+
 

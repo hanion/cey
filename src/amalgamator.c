@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define MAX_INPUTS 128
+#define MAX_INPUTS 1280
 
 
 typedef struct {
@@ -88,7 +88,7 @@ bool find_file_path(Amalgamator* a, char* filename, StringBuilder* out_fp) {
 }
 
 bool process_file(Amalgamator* a, const char *file) {
-	StringBuilder source = sb_new();
+	StringBuilder source = {0};
 	if (!read_entire_file(file, &source)) {
 		perror("read_entire_file error");
 		return false;
@@ -103,23 +103,23 @@ bool process_file(Amalgamator* a, const char *file) {
 	while (token.type != TOKEN_END && cursor < lexer.content_length) {
 		if (!pack_tight) {
 			// catch up to cursor
-			while (cursor < lexer.content_length && &(lexer.content[cursor]) != token.text) {
+			while (cursor < lexer.content_length && &(lexer.content[cursor]) != token.text.items) {
 				da_append(&a->output, lexer.content[cursor]);
 				cursor++;
 			}
 		}
 
-		if (lexer.preprocessor_mode && token.type == TOKEN_SYMBOL && strncmp(token.text, "#include", 8)==0) {
+		if (lexer.preprocessor_mode && token.type == TOKEN_SYMBOL && strncmp(token.text.items, "#include", 8)==0) {
 			// token is "#include"
 			lexer_next(&lexer); // " or <
 			Token include_text = lexer_next(&lexer); // the string
 
 			// null terminate include_text.text
-			StringBuilder filename = sb_new();
-			da_append_many(&filename, include_text.text, include_text.length);
+			StringBuilder filename = {0};
+			da_append_token(&filename, include_text);
 			da_append(&filename, '\0');
 
-			StringBuilder found_fp = sb_new();
+			StringBuilder found_fp = {0};
 			bool included = false;
 			if (find_file_path(a, filename.items, &found_fp)) {
 				if (!included_files_contains(&a->included_files, found_fp.items)) {
@@ -137,29 +137,39 @@ bool process_file(Amalgamator* a, const char *file) {
 			// catch up to new line
 			lexer_skip_until_new_line(&lexer);
 			Token nl = lexer_next(&lexer);
-			assert(nl.preproc_end && "we assumed newline would be the end of the include");
-			while (cursor < lexer.content_length && &(lexer.content[cursor]) != nl.text) {
+
+			//assert(nl.preproc_end && "we assumed newline would be the end of the include");
+			if (!nl.preproc_end) {
+				fprintf(stderr, "we assumed newline would be the end of the include\n");
+				fprintf(stderr, " in file: %s\n", file);
+				fprintf(stderr, " include_text %d %d : %.*s\n", include_text.type, (int)include_text.text.count, (int)include_text.text.count, include_text.text.items);
+				if (included) {
+					fprintf(stderr, " %.*s\n", (int)found_fp.count, found_fp.items);
+				}
+			}
+
+			while (cursor < lexer.content_length && &(lexer.content[cursor]) != nl.text.items) {
 				if (!included) {
 					da_append(&a->output, lexer.content[cursor]);
 				}
 				cursor++;
 			}
-		} else if (lexer.preprocessor_mode && token.type == TOKEN_SYMBOL && strncmp(token.text, "#pragma", 7)==0) {
-			bool next_is_once = (strncmp(lexer_next(&lexer).text, "once", 4) == 0);
+		} else if (lexer.preprocessor_mode && token.type == TOKEN_SYMBOL && strncmp(token.text.items, "#pragma", 7)==0) {
+			bool next_is_once = (strncmp(lexer_next(&lexer).text.items, "once", 4) == 0);
 			if (next_is_once) {
 				lexer_skip_until_new_line(&lexer);
 				Token nl = lexer_next(&lexer);
 				assert(nl.preproc_end && "we assumed newline would be the end of the pragma once");
-				while (cursor < lexer.content_length && &(lexer.content[cursor]) != nl.text) {
+				while (cursor < lexer.content_length && &(lexer.content[cursor]) != nl.text.items) {;
 					cursor++;
 				}
 			}
 		} else {
 			// any other token
 			if (!pack_tight || token.type != TOKEN_NEWLINE) {
-				da_append_many(&a->output, token.text, token.length);
+				da_append_token(&a->output, token);
 			}
-			cursor += token.length;
+			cursor += token.text.count;
 		}
 
 		Token prev = token;
@@ -194,7 +204,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	Amalgamator a = {
-		.output = sb_new(),
+		.output = {0},
 		.included_files = included_files_new(),
 		.source_files_count = 0,
 		.include_dirs_count = 0,
@@ -226,7 +236,7 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	StringBuilder sb_source_file = sb_new();
+	StringBuilder sb_source_file = {0};
 	for (size_t i = 0; i < a.source_files_count; ++i) {
 		sb_source_file.count = 0;
 		if (find_file_path(&a, a.source_files[i], &sb_source_file)) {

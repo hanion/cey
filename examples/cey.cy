@@ -31,18 +31,21 @@
 		(da)->count += (new_items_count);                                                       \
 	} iken (0)
 
+#tanımla da_append_cstr(da, cstr) da_append_many((da), (cstr), ip_uzunluk((cstr)))
+#tanımla da_append_sv(da, sv)     da_append_many((da), (sv)->items, (sv)->count)
+#tanımla da_append_token(da, tok) da_append_sv  ((da), &(tok).text)
+
 türtanımla yapı {
 	kar *items;
 	boyut_t count;
 	boyut_t capacity;
 } StringBuilder;
 
-StringBuilder sb_new() {
-	StringBuilder sb = {
-		.items = HİÇ, .count = 0, .capacity = 0
-	};
-	döndür sb;
-}
+türtanımla yapı {
+	kar *items;
+	boyut_t count;
+} StringView;
+
 
 
 #ekle <stdküt.b>
@@ -61,8 +64,7 @@ türtanımla sıralı {
 
 türtanımla yapı {
 	TokenType type;
-	sabit kar* text;
-	boyut_t length;
+	StringView text;
 	mantık preproc_end;
 } Token;
 
@@ -188,10 +190,14 @@ Token lexer_next(Lexer* l) {
 
 	Token token = {
 		.type = TOKEN_END,
-		.text = &l->content[l->cursor],
-		.length = 0,
+		.text = {
+			.items = (kar*)&l->content[l->cursor],
+			.count = 0
+		},
 		.preproc_end = yanlış
 	};
+	token.text.items = (kar*)&l->content[l->cursor];
+	token.text.count = 0;
 
 	eğer (l->cursor >= l->content_length) {
 		döndür token;
@@ -200,7 +206,7 @@ Token lexer_next(Lexer* l) {
 	eğer (lexer_match(l, '\n')) {
 		lexer_advance(l);
 		token.type = TOKEN_NEWLINE;
-		token.length = 1;
+		token.text.count = 1;
 		// TODO: handle '\'
 		eğer (l->preprocessor_mode) {
 			token.preproc_end = doğru;
@@ -214,7 +220,7 @@ Token lexer_next(Lexer* l) {
 		boyut_t start = l->cursor;
 		eğer (lexer_match_next(l, '/')) {
 			lexer_skip_until_new_line(l);
-			token.length = l->cursor-start;
+			token.text.count = l->cursor-start;
 			token.type = TOKEN_COMMENT;
 			döndür token;
 		}
@@ -226,8 +232,8 @@ Token lexer_next(Lexer* l) {
 		// 'ekle'
 		Token next = lexer_next(l);
 		// add '#'
-		next.text = token.text;
-		next.length++;
+		next.text.items = token.text.items;
+		next.text.count++;
 		döndür next;
 	}
 
@@ -235,13 +241,13 @@ Token lexer_next(Lexer* l) {
 		eğer (lexer_match(l, '>')) {
 			lexer_advance(l);
 			token.type = TOKEN_DONT_CARE;
-			token.length = 1;
+			token.text.count = 1;
 			döndür token;
 		}
 		eğer (lexer_match(l, '"')) {
 			lexer_advance(l);
 			token.type = TOKEN_DONT_CARE;
-			token.length = 1;
+			token.text.count = 1;
 			eğer (!l->preprocessor_in_string) {
 				l->preprocessor_in_string = doğru;
 				döndür token;
@@ -254,12 +260,12 @@ Token lexer_next(Lexer* l) {
 	eğer (!l->preprocessor_mode && lexer_match(l, '"')) {
 		lexer_advance(l);
 		token.type = TOKEN_LITERAL;
-		token.length++;
+		token.text.count++;
 		iken (l->cursor < l->content_length) {
 			eğer (lexer_match(l, '\n') || lexer_match(l, '"')) {
 				kır;
 			}
-			token.length++;
+			token.text.count++;
 			l->cursor++; ;
 		}
 		döndür token;
@@ -276,7 +282,7 @@ Token lexer_next(Lexer* l) {
 				}
 			}
 			l->cursor++;
-			token.length++;
+			token.text.count++;
 		}
 		döndür token;
 	}
@@ -293,14 +299,14 @@ Token lexer_next(Lexer* l) {
 				kır;
 			}
 			l->cursor++;
-			token.length++;
+			token.text.count++;
 		}
 		döndür token;
 	}
 
 	// unrecognized string
 	l->cursor++;
-	token.length = 1;
+	token.text.count = 1;
 	token.type = TOKEN_INVALID;
 	döndür token;
 }
@@ -407,6 +413,7 @@ mantık ends_with(sabit kar* str, sabit kar* w) {
 mantık is_cey_file(sabit kar* filename) {
 	döndür ends_with(filename, ".cy");
 }
+
 
 #ekle <string.h>
 
@@ -518,7 +525,7 @@ KeywordMap pkmap[] = {
 
 sabit kar* find_keyword(sabit kar* word, boyut_t len) {
 	için (tam i = 0; kmap[i].from != HİÇ; ++i) {
-		eğer (ip_sınırlı_karşılaştır(kmap[i].from, word, len) == 0 && ip_uzunluk(kmap[i].from) == len) {
+		eğer (ip_uzunluk(kmap[i].from) == len && ip_sınırlı_karşılaştır(kmap[i].from, word, len) == 0) {
 			döndür kmap[i].to;
 		}
 	}
@@ -527,7 +534,7 @@ sabit kar* find_keyword(sabit kar* word, boyut_t len) {
 
 sabit kar* find_keywordr(sabit kar* word, boyut_t len) {
 	için (tam i = 0; kmap[i].to != HİÇ; ++i) {
-		eğer (ip_sınırlı_karşılaştır(kmap[i].to, word, len) == 0 && ip_uzunluk(kmap[i].to) == len) {
+		eğer (ip_uzunluk(kmap[i].to) == len && ip_sınırlı_karşılaştır(kmap[i].to, word, len) == 0) {
 			döndür kmap[i].from;
 		}
 	}
@@ -537,7 +544,7 @@ sabit kar* find_keywordr(sabit kar* word, boyut_t len) {
 
 sabit kar* find_keyword_preproc(sabit kar* word, boyut_t len) {
 	için (tam i = 0; pkmap[i].from != HİÇ; ++i) {
-		eğer (ip_sınırlı_karşılaştır(pkmap[i].from, word, len) == 0 && ip_uzunluk(pkmap[i].from) == len) {
+		eğer (ip_uzunluk(pkmap[i].from) == len && ip_sınırlı_karşılaştır(pkmap[i].from, word, len) == 0) {
 			döndür pkmap[i].to;
 		}
 	}
@@ -545,11 +552,21 @@ sabit kar* find_keyword_preproc(sabit kar* word, boyut_t len) {
 }
 sabit kar* find_keyword_preprocr(sabit kar* word, boyut_t len) {
 	için (tam i = 0; pkmap[i].to != HİÇ; ++i) {
-		eğer (ip_sınırlı_karşılaştır(pkmap[i].to, word, len) == 0 && ip_uzunluk(pkmap[i].to) == len) {
+		eğer (ip_uzunluk(pkmap[i].to) == len && ip_sınırlı_karşılaştır(pkmap[i].to, word, len) == 0) {
 			döndür pkmap[i].from;
 		}
 	}
 	döndür find_keywordr(word, len);
+}
+
+sabit kar* find_token(Token* token, mantık preproc, mantık reverse) {
+	eğer (preproc) {
+		eğer (reverse) döndür find_keyword_preprocr(token->text.items, token->text.count);
+		değilse         döndür find_keyword_preproc (token->text.items, token->text.count);
+	} değilse {
+		eğer (reverse) döndür find_keywordr(token->text.items, token->text.count);
+		değilse         döndür find_keyword (token->text.items, token->text.count);
+	}
 }
 
 #ekle <doğrulama.b>
@@ -577,8 +594,8 @@ Options options_new_default() {
 // output_path must be null terminated
 mantık compile_to_c(sabit kar* file_path, sabit kar* output_path, Options options) {
 	mantık result = doğru;
-	StringBuilder source = sb_new();
-	StringBuilder output = sb_new();
+	StringBuilder source = {0};
+	StringBuilder output = {0};
 
 	eğer (!read_entire_file(file_path, &source)) { result = yanlış; git defer; }
 
@@ -589,27 +606,23 @@ mantık compile_to_c(sabit kar* file_path, sabit kar* output_path, Options optio
 	boyut_t cursor = 0;
 	iken (token.type != TOKEN_END) {
 		eğer (!options.pack_tight) {
-			iken (&(lexer.content[cursor]) != token.text) {
+			iken (&(lexer.content[cursor]) != token.text.items) {
 				da_append(&output, lexer.content[cursor]);
 				cursor++;
 			}
 		}
 
 		eğer (token.type == TOKEN_SYMBOL) {
-			sabit kar* to = HİÇ;
-			eğer (lexer.preprocessor_mode) {
-				to = options.from_c_to_cy ? find_keyword_preprocr(token.text, token.length) : find_keyword_preproc(token.text, token.length);
-			} değilse {
-				to = options.from_c_to_cy ? find_keywordr(token.text, token.length) : find_keyword(token.text, token.length);
-			}
-			da_append_many(&output, to ? to : token.text, to ? ip_uzunluk(to) : token.length);
+			sabit kar* to = find_token(&token, lexer.preprocessor_mode, options.from_c_to_cy);
+			eğer (to) da_append_cstr (&output, to);
+			değilse    da_append_token(&output, token);
 		} değilse {
 			eğer (!options.pack_tight || token.type != TOKEN_NEWLINE) {
-				da_append_many(&output, token.text, token.length);
+				da_append_token(&output, token);
 			}
 		}
 
-		cursor += token.length;
+		cursor += token.text.count;
 		Token prev = token;
 		token = lexer_next(&lexer);
 
@@ -666,9 +679,6 @@ tam ana(tam argc, kar** argv) {
 				op.cc_override = arg + 5;
 			} değilse eğer (ip_sınırlı_karşılaştır(arg, "--pack",6) == 0) {
 				op.pack_tight = doğru;
-			} değilse eğer (ip_sınırlı_karşılaştır(arg, "--yec",5) == 0) {
-				op.from_c_to_cy = doğru;
-				op.retain_intermediate = doğru;
 			} değilse eğer (ip_sınırlı_karşılaştır(arg, "--int",5) == 0) {
 				op.retain_intermediate = doğru;
 			} değilse {
@@ -731,7 +741,7 @@ tam ana(tam argc, kar** argv) {
 		beklepid(pid, &status, 0);
 		eğer (!op.retain_intermediate) {
 			kar cmd[256];
-			snyazdırf(cmd, boyut(cmd), "rm -rf %s", tmp_dir);
+			snyazdırf(cmd, boyut(cmd), "rm -rf %s", tmp_dir); // NOTE: scary
 			sistem(cmd);
 		}
 		eğer (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
@@ -739,6 +749,7 @@ tam ana(tam argc, kar** argv) {
 		}
 	}
 
+	// NOTE: based LOL
 	// NOTE: intentionally not freeing, less clutter
 	döndür 0;
 }

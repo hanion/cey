@@ -91,10 +91,14 @@ Token lexer_next(Lexer* l) {
 
 	Token token = {
 		.type = TOKEN_END,
-		.text = &l->content[l->cursor],
-		.length = 0,
+		.text = {
+			.items = (char*)&l->content[l->cursor],
+			.count = 0
+		},
 		.preproc_end = false
 	};
+	token.text.items = (char*)&l->content[l->cursor];
+	token.text.count = 0;
 
 	if (l->cursor >= l->content_length) {
 		return token;
@@ -103,7 +107,7 @@ Token lexer_next(Lexer* l) {
 	if (lexer_match(l, '\n')) {
 		lexer_advance(l);
 		token.type = TOKEN_NEWLINE;
-		token.length = 1;
+		token.text.count = 1;
 		// TODO: handle '\'
 		if (l->preprocessor_mode) {
 			token.preproc_end = true;
@@ -117,7 +121,7 @@ Token lexer_next(Lexer* l) {
 		size_t start = l->cursor;
 		if (lexer_match_next(l, '/')) {
 			lexer_skip_until_new_line(l);
-			token.length = l->cursor-start;
+			token.text.count = l->cursor-start;
 			token.type = TOKEN_COMMENT;
 			return token;
 		}
@@ -129,8 +133,8 @@ Token lexer_next(Lexer* l) {
 		// 'ekle'
 		Token next = lexer_next(l);
 		// add '#'
-		next.text = token.text;
-		next.length++;
+		next.text.items = token.text.items;
+		next.text.count++;
 		return next;
 	}
 
@@ -138,13 +142,13 @@ Token lexer_next(Lexer* l) {
 		if (lexer_match(l, '>')) {
 			lexer_advance(l);
 			token.type = TOKEN_DONT_CARE;
-			token.length = 1;
+			token.text.count = 1;
 			return token;
 		}
 		if (lexer_match(l, '"')) {
 			lexer_advance(l);
 			token.type = TOKEN_DONT_CARE;
-			token.length = 1;
+			token.text.count = 1;
 			if (!l->preprocessor_in_string) {
 				l->preprocessor_in_string = true;
 				return token;
@@ -157,12 +161,12 @@ Token lexer_next(Lexer* l) {
 	if (!l->preprocessor_mode && lexer_match(l, '"')) {
 		lexer_advance(l);
 		token.type = TOKEN_LITERAL;
-		token.length++;
+		token.text.count++;
 		while (l->cursor < l->content_length) {
 			if (lexer_match(l, '\n') || lexer_match(l, '"')) {
 				break;
 			}
-			token.length++;
+			token.text.count++;
 			l->cursor++; ;
 		}
 		return token;
@@ -179,7 +183,7 @@ Token lexer_next(Lexer* l) {
 				}
 			}
 			l->cursor++;
-			token.length++;
+			token.text.count++;
 		}
 		return token;
 	}
@@ -196,14 +200,14 @@ Token lexer_next(Lexer* l) {
 				break;
 			}
 			l->cursor++;
-			token.length++;
+			token.text.count++;
 		}
 		return token;
 	}
 
 	// unrecognized string
 	l->cursor++;
-	token.length = 1;
+	token.text.count = 1;
 	token.type = TOKEN_INVALID;
 	return token;
 }

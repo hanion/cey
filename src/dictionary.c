@@ -1,3 +1,4 @@
+#include "lexer.h"
 #include <string.h>
 
 typedef struct {
@@ -108,7 +109,7 @@ KeywordMap pkmap[] = {
 
 const char* find_keyword(const char* word, size_t len) {
 	for (int i = 0; kmap[i].from != NULL; ++i) {
-		if (strncmp(kmap[i].from, word, len) == 0 && strlen(kmap[i].from) == len) {
+		if (strlen(kmap[i].from) == len && strncmp(kmap[i].from, word, len) == 0) {
 			return kmap[i].to;
 		}
 	}
@@ -117,7 +118,7 @@ const char* find_keyword(const char* word, size_t len) {
 
 const char* find_keywordr(const char* word, size_t len) {
 	for (int i = 0; kmap[i].to != NULL; ++i) {
-		if (strncmp(kmap[i].to, word, len) == 0 && strlen(kmap[i].to) == len) {
+		if (strlen(kmap[i].to) == len && strncmp(kmap[i].to, word, len) == 0) {
 			return kmap[i].from;
 		}
 	}
@@ -127,7 +128,7 @@ const char* find_keywordr(const char* word, size_t len) {
 
 const char* find_keyword_preproc(const char* word, size_t len) {
 	for (int i = 0; pkmap[i].from != NULL; ++i) {
-		if (strncmp(pkmap[i].from, word, len) == 0 && strlen(pkmap[i].from) == len) {
+		if (strlen(pkmap[i].from) == len && strncmp(pkmap[i].from, word, len) == 0) {
 			return pkmap[i].to;
 		}
 	}
@@ -135,9 +136,19 @@ const char* find_keyword_preproc(const char* word, size_t len) {
 }
 const char* find_keyword_preprocr(const char* word, size_t len) {
 	for (int i = 0; pkmap[i].to != NULL; ++i) {
-		if (strncmp(pkmap[i].to, word, len) == 0 && strlen(pkmap[i].to) == len) {
+		if (strlen(pkmap[i].to) == len && strncmp(pkmap[i].to, word, len) == 0) {
 			return pkmap[i].from;
 		}
 	}
 	return find_keywordr(word, len);
+}
+
+const char* find_token(Token* token, bool preproc, bool reverse) {
+	if (preproc) {
+		if (reverse) return find_keyword_preprocr(token->text.items, token->text.count);
+		else         return find_keyword_preproc (token->text.items, token->text.count);
+	} else {
+		if (reverse) return find_keywordr(token->text.items, token->text.count);
+		else         return find_keyword (token->text.items, token->text.count);
+	}
 }

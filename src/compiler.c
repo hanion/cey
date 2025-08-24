@@ -27,8 +27,8 @@ Options options_new_default() {
 // output_path must be null terminated
 bool compile_to_c(const char* file_path, const char* output_path, Options options) {
 	bool result = true;
-	StringBuilder source = sb_new();
-	StringBuilder output = sb_new();
+	StringBuilder source = {0};
+	StringBuilder output = {0};
 
 	if (!read_entire_file(file_path, &source)) { result = false; goto defer; }
 
@@ -39,27 +39,23 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 	size_t cursor = 0;
 	while (token.type != TOKEN_END) {
 		if (!options.pack_tight) {
-			while (&(lexer.content[cursor]) != token.text) {
+			while (&(lexer.content[cursor]) != token.text.items) {
 				da_append(&output, lexer.content[cursor]);
 				cursor++;
 			}
 		}
 
 		if (token.type == TOKEN_SYMBOL) {
-			const char* to = NULL;
-			if (lexer.preprocessor_mode) {
-				to = options.from_c_to_cy ? find_keyword_preprocr(token.text, token.length) : find_keyword_preproc(token.text, token.length);
-			} else {
-				to = options.from_c_to_cy ? find_keywordr(token.text, token.length) : find_keyword(token.text, token.length);
-			}
-			da_append_many(&output, to ? to : token.text, to ? strlen(to) : token.length);
+			const char* to = find_token(&token, lexer.preprocessor_mode, options.from_c_to_cy);
+			if (to) da_append_cstr (&output, to);
+			else    da_append_token(&output, token);
 		} else {
 			if (!options.pack_tight || token.type != TOKEN_NEWLINE) {
-				da_append_many(&output, token.text, token.length);
+				da_append_token(&output, token);
 			}
 		}
 
-		cursor += token.length;
+		cursor += token.text.count;
 		Token prev = token;
 		token = lexer_next(&lexer);
 
