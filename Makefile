@@ -26,5 +26,5 @@ bootstrap: build build/amalgamator build/yec build/cey
 	build/amalgamator src/cey.c -I src -o build/amalgamation.c
 	rm -f examples/cey.cy
 	build/yec build/amalgamation.c examples/cey.cy
-	build/cey  $(CFLAGS) -o build/cey examples/cey.cy
+	build/cey $(CFLAGS) -o build/cey examples/cey.cy
 

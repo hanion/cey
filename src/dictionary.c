@@ -99,6 +99,7 @@ KeywordMap pkmap[] = {
 	{"doğrulama.b", "assert.h"},
 	{"stdmantık.b", "stdbool.h"},
 	{"stdtan.b", "stddef.h"},
+	{"ip.b", "string.h"},
 
 	{"sis/türler.b", "sys/types.h"},
 	{"sis/bekle.b", "sys/wait.h"},

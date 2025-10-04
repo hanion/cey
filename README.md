@@ -27,7 +27,7 @@ cey <input-files> [compiler-args] [cey-options]
 
 ## Example
 ```bash
-cey ./example.cy -o ./build/example -Wall -Werror -g3 -- --cc=clang
+cey -Wall -Werror ./example.cy -o ./build/example -- --cc=clang
 ```
 
 ## File Extension

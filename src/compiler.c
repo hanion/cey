@@ -1,10 +1,15 @@
 #include "lexer.h"
 #include "lexer.c"
 #include "file.c"
-#include "dictionary.c"
 #include <assert.h>
 #include <stdbool.h>
 #include <unistd.h>
+
+#ifdef OLD_TURKIC
+	#include "dictionary_otk.c"
+#else
+	#include "dictionary.c"
+#endif
 
 typedef struct {
 	char* cc_override;
@@ -30,7 +35,7 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 	StringBuilder source = {0};
 	StringBuilder output = {0};
 
-	if (!read_entire_file(file_path, &source)) { result = false; goto defer; }
+	if (!read_entire_file(file_path, &source)) return false;
 
 
 	Lexer lexer = lexer_new(source);
@@ -72,9 +77,8 @@ bool compile_to_c(const char* file_path, const char* output_path, Options option
 	}
 
 	mkdirs_recursive(output_path);
-	if (!write_to_file(output_path, &output)) { result = false; goto defer; }
+	if (!write_to_file(output_path, &output)) result = false;
 
-defer:
 	free(source.items);
 	free(output.items);
 	return result;
